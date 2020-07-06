@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <cmath>
 
 namespace SpiritJson {
 
@@ -20,10 +21,19 @@ public:
         ARRAY,
         OBJECT
     };
-    using array_type = std::vector<std::shared_ptr<Json>>;
-    using object_type = std::map<std::string, std::shared_ptr<Json>>;
+    using array_type = std::vector<Json>;
+    using object_type = std::map<std::string, Json>;
 
     Json();
+    Json(double val);
+    Json(std::nullptr_t);
+    Json(bool val);
+    Json(const std::string& val);
+    Json(std::string&& val);
+    Json(const Json::array_type& val);
+    Json(Json::array_type&& val);
+    Json(const Json::object_type& val);
+    Json(Json::object_type&& val);
 
     Type type() const;
 
@@ -57,11 +67,12 @@ public:
     const std::string& string_value() const;
     const Json::array_type& array_value() const;
     const Json::object_type& object_value() const;
+    void dump(std::string &out) const;
 
 private:
     std::shared_ptr<JsonValue> m_jv_ptr;    
 };
-
+    
 struct NullStruct
 {
 };
@@ -76,7 +87,108 @@ public:
     virtual const std::string& string_value() const;
     virtual const Json::array_type& array_value() const;
     virtual const Json::object_type& object_value() const;
+    virtual void dump(std::string &out) const = 0;
 };
+
+void Json::dump(std::string &out) const
+{
+    m_jv_ptr->dump(out);
+}
+    
+static void dump(NullStruct, std::string &out)
+{
+    out += "null";
+}
+
+static void dump(double value, std::string &out)
+{
+    if (std::isfinite(value)) {
+        char buf[32];
+        snprintf(buf, sizeof buf, "%.17g", value);
+        out += buf;
+    } else {
+        out += "null";
+    }
+}
+
+static void dump(int value, std::string &out)
+{
+    char buf[32];
+    snprintf(buf, sizeof buf, "%d", value);
+    out += buf;
+}
+
+static void dump(bool value, std::string &out)
+{
+    out += value ? "true" : "false";
+}
+
+static void dump(const std::string &value, std::string &out)
+{
+    out += '"';
+    for (size_t i = 0; i < value.length(); i++) {
+        const char ch = value[i];
+        if (ch == '\\') {
+            out += "\\\\";
+        } else if (ch == '"') {
+            out += "\\\"";
+        } else if (ch == '\b') {
+            out += "\\b";
+        } else if (ch == '\f') {
+            out += "\\f";
+        } else if (ch == '\n') {
+            out += "\\n";
+        } else if (ch == '\r') {
+            out += "\\r";
+        } else if (ch == '\t') {
+            out += "\\t";
+        } else if (static_cast<uint8_t>(ch) <= 0x1f) {
+            char buf[8];
+            snprintf(buf, sizeof buf, "\\u%04x", ch);
+            out += buf;
+        } else if (static_cast<uint8_t>(ch) == 0xe2 && static_cast<uint8_t>(value[i+1]) == 0x80
+                   && static_cast<uint8_t>(value[i+2]) == 0xa8) {
+            out += "\\u2028";
+            i += 2;
+        } else if (static_cast<uint8_t>(ch) == 0xe2 && static_cast<uint8_t>(value[i+1]) == 0x80
+                   && static_cast<uint8_t>(value[i+2]) == 0xa9) {
+            out += "\\u2029";
+            i += 2;
+        } else {
+            out += ch;
+        }
+    }
+    out += '"';
+}
+
+static void dump(const Json::array_type &values, std::string &out)
+{
+    bool first = true;
+    out += "[";
+    for (const auto &value : values) {
+        if (!first)
+            out += ", ";
+        value.dump(out);
+        first = false;
+    }
+    out += "]";
+}
+
+static void dump(const Json::object_type &values, std::string &out)
+{
+    bool first = true;
+    out += "{";
+    for (const auto &kv : values) {
+        if (!first)
+            out += ", ";
+        dump(kv.first, out);
+        out += ": ";
+        kv.second.dump(out);
+        first = false;
+    }
+    out += "}";
+}
+
 
 
 template <Json::Type JT, typename T>
@@ -92,6 +204,10 @@ public:
     Json::Type type() const override
     {
         return JT;
+    }
+    void dump(std::string &out) const override
+    {
+        SpiritJson::dump(m_val, out);
     }
 protected:
     const T m_val;
@@ -187,6 +303,33 @@ struct Statics
 Json::Json() : m_jv_ptr(Statics::null)
 {
 }
+Json::Json(std::nullptr_t) : m_jv_ptr(Statics::null)
+{
+}
+Json::Json(double val) : m_jv_ptr(std::make_shared<JsonNumber>(val))
+{
+}
+Json::Json(bool val) : m_jv_ptr(val ? Statics::t : Statics::f)
+{
+}
+Json::Json(const std::string& val) : m_jv_ptr(std::make_shared<JsonString>(val))
+{
+}
+Json::Json(std::string&& val) : m_jv_ptr(std::make_shared<JsonString>(std::move(val)))
+{
+}
+Json::Json(const Json::array_type& val) : m_jv_ptr(std::make_shared<JsonArray>(val))
+{
+}
+Json::Json(Json::array_type&& val) : m_jv_ptr(std::make_shared<JsonArray>(std::move(val)))
+{
+}
+Json::Json(const Json::object_type& val) : m_jv_ptr(std::make_shared<JsonObject>(val))
+{
+}
+Json::Json(Json::object_type&& val) : m_jv_ptr(std::make_shared<JsonObject>(std::move(val)))
+{
+}
 
 Json::Type Json::type() const
 {
@@ -242,4 +385,7 @@ const Json::object_type& JsonValue::object_value() const
     return Statics::empty_object;
 }
 
+
+
 }
+
