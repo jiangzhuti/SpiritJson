@@ -67,7 +67,7 @@ public:
     const std::string& string_value() const;
     const Json::array_type& array_value() const;
     const Json::object_type& object_value() const;
-    void dump(std::string &out) const;
+    void dump(std::string &out, int indent = 2, int left = 0) const;
 
 private:
     std::shared_ptr<JsonValue> m_jv_ptr;    
@@ -87,21 +87,25 @@ public:
     virtual const std::string& string_value() const;
     virtual const Json::array_type& array_value() const;
     virtual const Json::object_type& object_value() const;
-    virtual void dump(std::string &out) const = 0;
+    virtual void dump(std::string &out, int indent, int left) const = 0;
 };
 
-void Json::dump(std::string &out) const
+void Json::dump(std::string &out, int indent, int left) const
 {
-    m_jv_ptr->dump(out);
+    m_jv_ptr->dump(out, indent, left);
 }
     
-static void dump(NullStruct, std::string &out)
+static void dump(NullStruct, std::string &out, int indent, int left)
 {
+    (void) indent;
+    (void) left;
     out += "null";
 }
 
-static void dump(double value, std::string &out)
+static void dump(double value, std::string &out, int indent, int left)
 {
+    (void) indent;
+    (void) left;
     if (std::isfinite(value)) {
         out += std::to_string(value);
     } else {
@@ -109,13 +113,17 @@ static void dump(double value, std::string &out)
     }
 }
 
-static void dump(bool value, std::string &out)
+static void dump(bool value, std::string &out, int indent, int left)
 {
+    (void) indent;
+    (void) left;
     out += value ? "true" : "false";
 }
 
-static void dump(const std::string &value, std::string &out)
+static void dump(const std::string &value, std::string &out, int indent, int left)
 {
+    (void) indent;
+    (void) left;
     out += '"';
     for (size_t i = 0; i < value.length(); i++) {
         const char ch = value[i];
@@ -152,31 +160,41 @@ static void dump(const std::string &value, std::string &out)
     out += '"';
 }
 
-static void dump(const Json::array_type &values, std::string &out)
+static void dump(const Json::array_type &values, std::string &out, int indent, int left)
 {
     bool first = true;
     out += "[";
     for (const auto &value : values) {
         if (!first)
-            out += ", ";
-        value.dump(out);
+            out += ", \n";
+        else
+            out += "\n";
+        out += std::string(left + indent, ' ');
+        value.dump(out, indent, left + indent);
         first = false;
     }
+    out += "\n";
+    out += std::string(left, ' ');
     out += "]";
 }
 
-static void dump(const Json::object_type &values, std::string &out)
+static void dump(const Json::object_type &values, std::string &out, int indent, int left)
 {
     bool first = true;
     out += "{";
     for (const auto &kv : values) {
         if (!first)
-            out += ", ";
-        dump(kv.first, out);
+            out += ", \n";
+        else
+            out += "\n";
+        out += std::string(left + indent, ' ');
+        dump(kv.first, out, 0, 0);
         out += ": ";
-        kv.second.dump(out);
+        kv.second.dump(out, indent, left + indent);
         first = false;
     }
+    out += "\n";
+    out += std::string(left, ' ');
     out += "}";
 }
 
@@ -196,9 +214,9 @@ public:
     {
         return JT;
     }
-    void dump(std::string &out) const override
+    void dump(std::string &out, int indent, int left) const override
     {
-        SpiritJson::dump(m_val, out);
+        SpiritJson::dump(m_val, out, indent, left);
     }
 protected:
     const T m_val;

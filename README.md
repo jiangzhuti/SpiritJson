@@ -11,21 +11,21 @@ $ g++ -o t -Wall test.cpp -g -Wextra -Wpedantic -fsanitize=address -fsanitize=un
 $ ./t | jq .
 {
   "answer": {
-    "everything": 42
-  },
-  "happy": true,
+    "everything": 42.000000
+  }, 
+  "happy": true, 
   "list": [
-    1,
-    0,
-    2
-  ],
-  "name": "Niels",
-  "nothing": null,
+    1.000000, 
+    0.000000, 
+    2.000000
+  ], 
+  "name": "Niels", 
+  "nothing": null, 
   "object": {
-    "currency": "USD",
-    "value": 42.99
-  },
-  "pi": 3.141
+    "currency": "USD", 
+    "value": 42.990000
+  }, 
+  "pi": 3.141000
 }
 
 ```
