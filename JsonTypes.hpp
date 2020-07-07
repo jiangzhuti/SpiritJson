@@ -103,19 +103,10 @@ static void dump(NullStruct, std::string &out)
 static void dump(double value, std::string &out)
 {
     if (std::isfinite(value)) {
-        char buf[32];
-        snprintf(buf, sizeof buf, "%.17g", value);
-        out += buf;
+        out += std::to_string(value);
     } else {
         out += "null";
     }
-}
-
-static void dump(int value, std::string &out)
-{
-    char buf[32];
-    snprintf(buf, sizeof buf, "%d", value);
-    out += buf;
 }
 
 static void dump(bool value, std::string &out)
