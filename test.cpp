@@ -16,10 +16,19 @@ int main()
   "answer": {
     "everything": 42
   },
+  "名字": "兰德里",
   "list": [1, 0, 2],
   "object": {
     "currency": "USD",
-    "value": 42.99
+    "value": 42.99,
+    "empty": [],
+    "variant": [
+      1,
+      false,
+      true,
+      "abcd\tef",
+      {}
+    ]
   }
 })");
         std::string str;

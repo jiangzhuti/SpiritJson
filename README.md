@@ -25,9 +25,20 @@ $ ./t | jq .
   "nothing": null, 
   "object": {
     "currency": "USD", 
-    "value": 42.990000
+    "empty": [
+    ], 
+    "value": 42.990000, 
+    "variant": [
+      1.000000, 
+      false, 
+      true, 
+      "abcd\tef", 
+      {
+      }
+    ]
   }, 
-  "pi": 3.141000
+  "pi": 3.141000, 
+  "名字": "兰德里"
 }
 
 ```
