@@ -10,7 +10,7 @@ json结构参考了json11，语法规则是简化版的json语法(参见https://
 
 ```
 $ g++ -o t -Wall test.cpp -g -Wextra -Wpedantic -fsanitize=address -fsanitize=undefined
-$ ./t | jq .
+$ ./t
 {
   "answer": {
     "everything": 42.000000
